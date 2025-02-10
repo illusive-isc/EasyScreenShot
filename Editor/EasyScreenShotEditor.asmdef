@@ -1,0 +1,15 @@
+{
+    "name": "jp.illusive_isc.EasyScreenShot.Editor",
+    "rootNamespace": "jp.illusive_isc",
+    "references": [
+        "jp.illusive_isc.IllEasyScreenShot"
+    ],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": []
+}

@@ -1,0 +1,13 @@
+{
+    "name": "jp.illusive_isc.IllEasyScreenShot",
+    "rootNamespace": "jp.illusive_isc",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": []
+}

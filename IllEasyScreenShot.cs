@@ -11,83 +11,63 @@ namespace jp.illusive_isc
         private int tmpWidth;
         private int tmpHeight;
 
-        [SerializeField]
         public string folderPath = "Screenshots";
 
-        [SerializeField, ColorUsage(true, false)]
+        [SerializeField,ColorUsage(true, false)]
         public Color background;
-        [SerializeField]
         public string fileString = "screenshot";
         public Texture2D previewTexture;  // プレビュー用のテクスチャ
 
 
-        [SerializeField]
         public int resolutionsIndex = 3;
-        [SerializeField]
         public int aspectRatioIndex = 4;
-        [SerializeField]
         public int aspectIndex = 0;
-        [SerializeField]
         public int backgroundIndex = 0;
-        [SerializeField]
         public int mode = 0;
-        [SerializeField]
         public int cameraIndex = 0;
-        [SerializeField]
         public int projectionIndex = 0;
-        [SerializeField]
         public bool doImage = false;
-        [SerializeField]
         public float size = 1.0f;
-        [SerializeField]
         public int FoV = 30;
 
-        private RenderTexture rt;
 
         [ContextMenu("Save Camera Image")]
         public void GetImage()
         {
+
             if (doImage) return;
             doImage = true;
 
             try
             {
-                // RenderTextureのサイズが変更された場合に作り直す
-                if (rt == null || rt.width != width || rt.height != height)
-                {
-                    if (rt != null)
-                    {
-                        rt.Release();
-                        Destroy(rt);
-                    }
+                RenderTexture rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+                Camera copiedCamera = Instantiate(Camera.allCameras[cameraIndex]);
 
-                    rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
-                }
 
                 switch (backgroundIndex)
                 {
                     case 0:
-                        Camera.allCameras[cameraIndex].clearFlags = CameraClearFlags.Skybox;
+                        copiedCamera.clearFlags = CameraClearFlags.Skybox;
                         break;
                     case 1:
-                        Camera.allCameras[cameraIndex].clearFlags = CameraClearFlags.Color;
-                        Camera.allCameras[cameraIndex].backgroundColor = background;
+                        copiedCamera.clearFlags = CameraClearFlags.Color;
+                        copiedCamera.backgroundColor = background;
                         break;
                     case 2:
-                        Camera.allCameras[cameraIndex].clearFlags = CameraClearFlags.SolidColor;
-                        Camera.allCameras[cameraIndex].backgroundColor = Color.clear;
+                        copiedCamera.clearFlags = CameraClearFlags.SolidColor;
+                        copiedCamera.backgroundColor = Color.clear;
                         break;
                     default:
                         break;
                 }
-                Camera.allCameras[cameraIndex].orthographic = projectionIndex == 0;
-                Camera.allCameras[cameraIndex].orthographicSize = 0.5f / size;
-                Camera.allCameras[cameraIndex].fieldOfView = FoV;
+                copiedCamera.orthographic = projectionIndex == 0;
+                copiedCamera.orthographicSize = 0.5f / size;
+                copiedCamera.fieldOfView = FoV;
 
 
-                Camera.allCameras[cameraIndex].targetTexture = rt;
+                copiedCamera.targetTexture = rt;
 
-                Camera.allCameras[cameraIndex].Render();
+                copiedCamera.Render();
 
                 if (previewTexture == null || previewTexture.width != width || previewTexture.height != height)
                 {
@@ -98,8 +78,20 @@ namespace jp.illusive_isc
                 previewTexture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
                 previewTexture.Apply();
 
-                Camera.allCameras[cameraIndex].targetTexture = null;
-                RenderTexture.active = null;
+
+                if (Application.isPlaying)
+                {
+                    RenderTexture.active = null;
+                    rt.Release();
+                    Destroy(copiedCamera.gameObject);
+                }
+                else
+                {
+                    RenderTexture.active = null;
+                    rt.Release();
+                    DestroyImmediate(copiedCamera.gameObject);
+                }
+
             }
             catch (System.Exception e)
             {
@@ -107,15 +99,14 @@ namespace jp.illusive_isc
             }
             finally
             {
+
                 doImage = false;
             }
         }
 
-        public void cameraMoveDef()
+        public void CameraMoveDef()
         {
-            var camera = Camera.allCameras[cameraIndex].transform;
-            camera.position = new(0, 0.8f, 1f);
-            camera.rotation = Quaternion.Euler(new(0, 180, 0));
+            Camera.allCameras[cameraIndex].transform.SetPositionAndRotation(new(0, 1f, 1f), Quaternion.Euler(new(0, 180, 0)));
         }
         // 画像をファイルとして保存
         public void SaveToFile()
@@ -165,15 +156,6 @@ namespace jp.illusive_isc
                 tmpWidth = width;
                 tmpHeight = height;
                 GetImage();
-            }
-        }
-
-        private void OnDestroy()
-        {
-            if (rt != null)
-            {
-                rt.Release();
-                Destroy(rt);
             }
         }
     }

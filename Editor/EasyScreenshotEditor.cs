@@ -83,7 +83,7 @@ namespace jp.illusive_isc
             EditorGUILayout.BeginHorizontal();
             GUILayout.Label("カ メ ラ　");
             if (GUILayout.Button("キャラ正面へ"))
-                EasyScreenShot.cameraMoveDef();
+                EasyScreenShot.CameraMoveDef();
             GUILayout.FlexibleSpace();
 
             List<string> cameraNames = new();

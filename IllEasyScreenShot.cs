@@ -16,7 +16,7 @@ namespace jp.illusive_isc
 
         [SerializeField, ColorUsage(true, false)]
         public Color background;
-        public string fileString = "screenshot";
+        public string fileString = "<プロジェクト名>_<月日時分秒>_screenshot";
         public Texture2D previewTexture;  // プレビュー用のテクスチャ
 
 

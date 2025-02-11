@@ -94,7 +94,7 @@ namespace jp.illusive_isc
                 }
 
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 Debug.LogError("Screenshot capture failed: " + e.Message);
             }
@@ -110,7 +110,7 @@ namespace jp.illusive_isc
             Camera.allCameras[cameraIndex].transform.SetPositionAndRotation(new(0, 1f, 1f), Quaternion.Euler(new(0, 180, 0)));
         }
         // 画像をファイルとして保存
-        public void SaveToFile()
+        public void SaveToFile(bool openFlg)
         {
             if (previewTexture != null)
             {
@@ -131,9 +131,9 @@ namespace jp.illusive_isc
                     File.WriteAllBytes(filePath, bytes);
                     Debug.Log("Saved Camera Screenshot: " + filePath);
 
-                    // エクスプローラーで選択状態にする
-                    string absoluteFilePath = Path.GetFullPath(filePath);
-                    System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + absoluteFilePath + "\"");
+                    if(openFlg)
+                    System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + Path.GetFullPath(filePath) + "\"");
+        
                 }
                 catch (System.Exception e)
                 {
@@ -189,5 +189,44 @@ namespace jp.illusive_isc
 
             return input;  // < > が見つからない場合は null を返す
         }
+
+
+        public Texture2D sourceTexture;
+        Texture2D ApplyBlur(Texture2D texture, int blurSize)
+        {
+            int width = texture.width;
+            int height = texture.height;
+            Color[] pixels = texture.GetPixels();
+            Color[] newPixels = new Color[pixels.Length];
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    Color sum = Color.black;
+                    int count = 0;
+
+                    for (int fx = -blurSize; fx <= blurSize; fx++)
+                    {
+                        for (int fy = -blurSize; fy <= blurSize; fy++)
+                        {
+                            int nx = Mathf.Clamp(x + fx, 0, width - 1);
+                            int ny = Mathf.Clamp(y + fy, 0, height - 1);
+                            sum += pixels[nx + ny * width];
+                            count++;
+                        }
+                    }
+
+                    newPixels[x + y * width] = sum / count;
+                }
+            }
+
+            Texture2D blurredTexture = new Texture2D(width, height);
+            blurredTexture.SetPixels(newPixels);
+            blurredTexture.Apply();
+            return blurredTexture;
+        }
+
+
     }
 }

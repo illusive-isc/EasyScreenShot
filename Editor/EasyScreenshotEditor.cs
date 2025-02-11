@@ -199,8 +199,12 @@ namespace jp.illusive_isc
                 EasyScreenShot.GetImage();
             GUI.enabled = true;
 
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Saveしてフォルダ表示"))
+                EasyScreenShot.SaveToFile(true);
             if (GUILayout.Button("Save"))
-                EasyScreenShot.SaveToFile();
+                EasyScreenShot.SaveToFile(false);
+            EditorGUILayout.EndHorizontal();
 
         }
     }

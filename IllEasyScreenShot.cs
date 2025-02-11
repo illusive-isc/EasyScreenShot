@@ -1,6 +1,7 @@
+using System;
 using System.IO;
+using System.Text.RegularExpressions;
 using UnityEngine;
-
 namespace jp.illusive_isc
 {
     public class IllEasyScreenShot : MonoBehaviour
@@ -11,9 +12,9 @@ namespace jp.illusive_isc
         private int tmpWidth;
         private int tmpHeight;
 
-        public string folderPath = "Screenshots";
+        public string folderPath = "Assets//Screenshots";
 
-        [SerializeField,ColorUsage(true, false)]
+        [SerializeField, ColorUsage(true, false)]
         public Color background;
         public string fileString = "screenshot";
         public Texture2D previewTexture;  // プレビュー用のテクスチャ
@@ -114,7 +115,10 @@ namespace jp.illusive_isc
             if (previewTexture != null)
             {
                 byte[] bytes = previewTexture.EncodeToPNG();
-                string filePath = Path.Combine(folderPath, fileString + ".png");
+
+
+                string aaa = ExtractTextInBrackets(fileString.Replace("<プロジェクト名>", GetProjectName()));
+                string filePath = Path.Combine(folderPath, aaa + ".png");
 
                 try
                 {
@@ -157,6 +161,33 @@ namespace jp.illusive_isc
                 tmpHeight = height;
                 GetImage();
             }
+        }
+        string GetProjectName()
+        {
+            string projectPath = Application.dataPath;
+            string projectRoot = projectPath.Substring(0, projectPath.LastIndexOf('/'));
+            string projectName = projectRoot.Substring(projectRoot.LastIndexOf('/') + 1);
+
+            return projectName;
+        }
+        string ExtractTextInBrackets(string input)
+        {
+            // 正規表現で < と > の間の文字を取り出す
+            Match match = Regex.Match(input, @"(.*)<([^>]+)>(.*)");
+
+            if (match.Success)
+            {
+                DateTime now = DateTime.Now;
+                string extractedText = match.Groups[2].Value;  // < > の中身を返す
+                extractedText = extractedText.Replace("月", now.ToString("MM"));
+                extractedText = extractedText.Replace("日", now.ToString("dd"));
+                extractedText = extractedText.Replace("時", now.ToString("HH"));
+                extractedText = extractedText.Replace("分", now.ToString("mm"));
+                extractedText = extractedText.Replace("秒", now.ToString("ss"));
+                return match.Groups[1].Value + extractedText + match.Groups[3].Value;
+            }
+
+            return input;  // < > が見つからない場合は null を返す
         }
     }
 }

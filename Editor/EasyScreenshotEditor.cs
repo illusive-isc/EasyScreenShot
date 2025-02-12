@@ -5,9 +5,42 @@ using UnityEngine;
 
 namespace jp.illusive_isc
 {
+
+
     [CustomEditor(typeof(IllEasyScreenShot))]
     public class EasyScreenShotEditor : Editor
     {
+
+
+        [MenuItem("GameObject/illusive_tools/Attach IllEasyScreenShot", false, 10)]
+        private static void AttachIllEasyScreenShot()
+        {
+            if (Selection.activeGameObject != null)
+            {
+                GameObject selectedObject = Selection.activeGameObject;
+
+                // 既にアタッチされていないかチェック
+                if (selectedObject.GetComponent<IllEasyScreenShot>() == null)
+                {
+                    selectedObject.AddComponent<IllEasyScreenShot>();
+                    Debug.Log("IllEasyScreenShot コンポーネントが " + selectedObject.name + " に追加されました。");
+                }
+                else
+                {
+                    Debug.LogWarning("IllEasyScreenShot はすでに " + selectedObject.name + " にアタッチされています。");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("オブジェクトが選択されていません。");
+            }
+        }
+
+        [MenuItem("GameObject/Illusive ISC/Attach IllEasyScreenShot", true)]
+        private static bool ValidateAttachIllEasyScreenShot()
+        {
+            return Selection.activeGameObject != null;
+        }
 
         private readonly int[] resolutions ={
                 1280,   // HD
@@ -51,6 +84,7 @@ namespace jp.illusive_isc
                 "スカイボックス",
                 "背景色",
                 "透過",
+                "背景画像"
         };
         private readonly string[] projectionString ={
                 "正射",
@@ -65,7 +99,11 @@ namespace jp.illusive_isc
         private IllEasyScreenShot EasyScreenShot;
 
         private SerializedProperty background;
+        private SerializedProperty bgTexture;
+        private SerializedProperty useLensBlur;
         private SerializedProperty size;
+        private SerializedProperty MaxBlur;
+        private SerializedProperty BlurSize;
         private SerializedProperty FoV;
 
 
@@ -73,15 +111,22 @@ namespace jp.illusive_isc
         private void OnEnable()
         {
             background = serializedObject.FindProperty("background");
+            bgTexture = serializedObject.FindProperty("bgTexture");
+            useLensBlur = serializedObject.FindProperty("useLensBlur");
             size = serializedObject.FindProperty("size");
+            MaxBlur = serializedObject.FindProperty("MaxBlur");
+            BlurSize = serializedObject.FindProperty("BlurSize");
             FoV = serializedObject.FindProperty("FoV");
         }
 
         public override void OnInspectorGUI()
         {
+
+            GUIStyle labelStyle = new(GUI.skin.label);
+            labelStyle.fontStyle = FontStyle.BoldAndItalic;
             EasyScreenShot = (IllEasyScreenShot)target;
             EditorGUILayout.BeginHorizontal();
-            GUILayout.Label("カ メ ラ　");
+            GUILayout.Label("カ メ ラ　", labelStyle);
             if (GUILayout.Button("キャラ正面へ"))
                 EasyScreenShot.CameraMoveDef();
             GUILayout.FlexibleSpace();
@@ -96,7 +141,7 @@ namespace jp.illusive_isc
 
 
             EditorGUILayout.BeginHorizontal();
-            GUILayout.Label("投 　影");
+            GUILayout.Label("投 　影", labelStyle);
             GUILayout.FlexibleSpace();
             EasyScreenShot.projectionIndex = EditorGUILayout.Popup(EasyScreenShot.projectionIndex, projectionString, GUILayout.Width(186));
             EditorGUILayout.EndHorizontal();
@@ -106,13 +151,13 @@ namespace jp.illusive_isc
             if (EasyScreenShot.projectionIndex == 0)
             {
 
-                GUILayout.Label("拡 大 率");
+                GUILayout.Label("拡 大 率", labelStyle);
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.PropertyField(size, GUIContent.none, GUILayout.Width(186));
             }
             else
             {
-                GUILayout.Label("F　o　V");
+                GUILayout.Label("F　o　V", labelStyle);
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.PropertyField(FoV, GUIContent.none, GUILayout.Width(186));
 
@@ -121,7 +166,7 @@ namespace jp.illusive_isc
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.BeginHorizontal();
 
-            GUILayout.Label("背 　景");
+            GUILayout.Label("背 　景", labelStyle);
             GUILayout.FlexibleSpace();
             if (EasyScreenShot.backgroundIndex != 1)
             {
@@ -139,14 +184,14 @@ namespace jp.illusive_isc
 
 
             EditorGUILayout.BeginHorizontal();
-            GUILayout.Label("モ ー ド");
+            GUILayout.Label("モ ー ド", labelStyle);
             GUILayout.FlexibleSpace();
             EasyScreenShot.mode = EditorGUILayout.Popup(EasyScreenShot.mode, modeString, GUILayout.Width(186));
             EditorGUILayout.EndHorizontal();
 
 
             EditorGUILayout.BeginHorizontal();
-            GUILayout.Label("解像度　");
+            GUILayout.Label("解像度　", labelStyle);
             GUILayout.FlexibleSpace();
             if (EasyScreenShot.mode == 0)
             {
@@ -167,9 +212,25 @@ namespace jp.illusive_isc
             }
 
             EditorGUILayout.EndHorizontal();
+            if (EasyScreenShot.backgroundIndex == 3)
+            {
+                serializedObject.Update();
+                GUILayout.Label("背景画像", labelStyle);
+                bgTexture.objectReferenceValue = EditorGUILayout.ObjectField("", bgTexture.objectReferenceValue, typeof(Texture2D), false);
+                GUILayout.Label("ブラーオプション", EditorStyles.boldLabel);
 
+                // bool型の選択ボックス（チェックボックス）
+                useLensBlur.boolValue = EditorGUILayout.Toggle("レンズブラーを使用", useLensBlur.boolValue);
 
+                // チェックボックスの状態に基づいて表示を変更
 
+                GUILayout.Label("レンズブラー", labelStyle);
+                GUILayout.FlexibleSpace();
+                if (useLensBlur.boolValue)
+                    EditorGUILayout.PropertyField(MaxBlur, new GUIContent("強度"));
+                EditorGUILayout.PropertyField(BlurSize, new GUIContent("拡散率"));
+                serializedObject.ApplyModifiedProperties();
+            }
             EditorGUILayout.BeginHorizontal();
 
             EditorGUILayout.LabelField("フォルダ 　", GUILayout.Width(60));

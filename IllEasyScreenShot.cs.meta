@@ -3,7 +3,11 @@ guid: 5a11894927f083e4baca40187d53029a
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - previewTexture: {instanceID: 0}
+  - backgroundTexture: {instanceID: 0}
+  - blurShader: {fileID: 7200000, guid: f75275e82cb1d3747abc9d634e01658a, type: 3}
+  - alphablend: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.RegularExpressions;
 using UnityEngine;
+
 namespace jp.illusive_isc
 {
     public class IllEasyScreenShot : MonoBehaviour
@@ -20,7 +21,6 @@ namespace jp.illusive_isc
         public Texture2D previewTexture;
         public Texture2D bgTexture;
 
-
         public int resolutionsIndex = 3;
         public int aspectRatioIndex = 4;
         public int aspectIndex = 0;
@@ -30,25 +30,26 @@ namespace jp.illusive_isc
         public int projectionIndex = 0;
         public bool doImage = false;
         public float size = 1.0f;
+
         [Range(0.0f, 1.0f)]
         public float BlurSize = 0.5f;
+
         [Range(0.0f, 1.0f)]
         public float MaxBlur = 0.3f;
         public int FoV = 30;
         public bool useLensBlur = false;
 
-
         [ContextMenu("Save Camera Image")]
         public void GetImage()
         {
-            if (doImage) return;
+            if (doImage)
+                return;
             doImage = true;
 
             try
             {
                 RenderTexture rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
                 Camera copiedCamera = Instantiate(Camera.allCameras[cameraIndex]);
-
 
                 switch (backgroundIndex)
                 {
@@ -74,7 +75,11 @@ namespace jp.illusive_isc
                 copiedCamera.targetTexture = rt;
                 copiedCamera.Render();
 
-                if (previewTexture == null || previewTexture.width != width || previewTexture.height != height)
+                if (
+                    previewTexture == null
+                    || previewTexture.width != width
+                    || previewTexture.height != height
+                )
                 {
                     previewTexture = new Texture2D(width, height, TextureFormat.ARGB32, false);
                 }
@@ -88,7 +93,6 @@ namespace jp.illusive_isc
 
                     RenderTexture rtBlend = new(width, height, 24, RenderTextureFormat.ARGB32);
 
-
                     RenderTexture.active = rtBlend;
                     Texture2D bgTmpTexture = new(width, height, TextureFormat.ARGB32, false);
                     Graphics.Blit(null, rtBlend, blurMaterial);
@@ -96,14 +100,9 @@ namespace jp.illusive_isc
                     bgTmpTexture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
                     bgTmpTexture.Apply();
 
-
-
-
                     RenderTexture.active = rt;
                     previewTexture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
                     previewTexture.Apply();
-
-
 
                     Material blendMaterial = new(Shader.Find("Hidden/IllBlend"));
                     // 合成処理
@@ -115,7 +114,6 @@ namespace jp.illusive_isc
                 }
                 else
                 {
-
                     RenderTexture.active = rt;
                 }
                 previewTexture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
@@ -146,8 +144,11 @@ namespace jp.illusive_isc
 
         public void CameraMoveDef()
         {
-            Camera.allCameras[cameraIndex].transform.SetPositionAndRotation(new(0, 1f, 1f), Quaternion.Euler(new(0, 180, 0)));
+            Camera
+                .allCameras[cameraIndex]
+                .transform.SetPositionAndRotation(new(0, 1f, 1f), Quaternion.Euler(new(0, 180, 0)));
         }
+
         // 画像をファイルとして保存
         public void SaveToFile(bool openFlg)
         {
@@ -155,8 +156,9 @@ namespace jp.illusive_isc
             {
                 byte[] bytes = previewTexture.EncodeToPNG();
 
-
-                string aaa = ExtractTextInBrackets(fileString.Replace("<プロジェクト名>", GetProjectName()));
+                string aaa = ExtractTextInBrackets(
+                    fileString.Replace("<プロジェクト名>", GetProjectName())
+                );
                 string filePath = Path.Combine(folderPath, aaa + ".png");
 
                 try
@@ -171,7 +173,10 @@ namespace jp.illusive_isc
                     Debug.Log("Saved Camera Screenshot: " + filePath);
 
                     if (openFlg)
-                        System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + Path.GetFullPath(filePath) + "\"");
+                        System.Diagnostics.Process.Start(
+                            "explorer.exe",
+                            "/select,\"" + Path.GetFullPath(filePath) + "\""
+                        );
                 }
                 catch (Exception e)
                 {
@@ -200,6 +205,7 @@ namespace jp.illusive_isc
                 GetImage();
             }
         }
+
         string GetProjectName()
         {
             string projectPath = Application.dataPath;
@@ -208,6 +214,7 @@ namespace jp.illusive_isc
 
             return projectName;
         }
+
         string ExtractTextInBrackets(string input)
         {
             Match match = Regex.Match(input, @"(.*)<([^>]+)>(.*)");

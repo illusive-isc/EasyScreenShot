@@ -1,3 +1,4 @@
 # 使い方
 inspectorの任意のオブジェクトに「EasyScreenShot」をAddcomponentし画像を撮影できます
+右クリックして「illusive_tools→EasyScreenShot」でも追加できます
 おすすめはgesturemanagerのオブジェクトに追加して操作しながら撮影です

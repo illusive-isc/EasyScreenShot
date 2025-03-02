@@ -1,3 +1,3 @@
 # 使い方
-inspectorの任意のオブジェクトにAddcomponentを行い画像を撮影できます
+inspectorの任意のオブジェクトに「EasyScreenShot」をAddcomponentし画像を撮影できます
 おすすめはgesturemanagerのオブジェクトに追加して操作しながら撮影です

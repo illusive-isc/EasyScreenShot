@@ -36,7 +36,9 @@ namespace jp.illusive_isc
 
         [Range(0.0f, 1.0f)]
         public float MaxBlur = 0.3f;
-        public int FoV = 30;
+        public float FoV = 30f;
+        public bool FoVtoggle = false;
+        public bool ScreenshotMode = false;
         public bool useLensBlur = false;
 
         [ContextMenu("Save Camera Image")]
@@ -70,7 +72,7 @@ namespace jp.illusive_isc
                 }
 
                 copiedCamera.orthographic = projectionIndex == 0;
-                copiedCamera.orthographicSize = 0.5f / size;
+                copiedCamera.orthographicSize = 0.6f / size;
                 copiedCamera.fieldOfView = FoV;
                 copiedCamera.targetTexture = rt;
                 copiedCamera.Render();
@@ -147,6 +149,7 @@ namespace jp.illusive_isc
             Camera
                 .allCameras[cameraIndex]
                 .transform.SetPositionAndRotation(new(0, 1f, 1f), Quaternion.Euler(new(0, 180, 0)));
+            GetImage();
         }
 
         // 画像をファイルとして保存

@@ -113,6 +113,10 @@ namespace jp.illusive_isc
         private SerializedProperty MaxBlur;
         private SerializedProperty BlurSize;
         private SerializedProperty FoV;
+        private SerializedProperty FoVtoggle;
+        private SerializedProperty ScreenshotMode;
+
+        private double lastTime;
 
         private void OnEnable()
         {
@@ -123,12 +127,14 @@ namespace jp.illusive_isc
             MaxBlur = serializedObject.FindProperty("MaxBlur");
             BlurSize = serializedObject.FindProperty("BlurSize");
             FoV = serializedObject.FindProperty("FoV");
+            FoVtoggle = serializedObject.FindProperty("FoVtoggle");
+            ScreenshotMode = serializedObject.FindProperty("ScreenshotMode");
         }
 
         public override void OnInspectorGUI()
         {
-            GUIStyle labelStyle = new(GUI.skin.label);
-            labelStyle.fontStyle = FontStyle.BoldAndItalic;
+            serializedObject.Update();
+            GUIStyle labelStyle = new(GUI.skin.label) { fontStyle = FontStyle.BoldAndItalic };
             EasyScreenShot = (IllEasyScreenShot)target;
             EditorGUILayout.BeginHorizontal();
             GUILayout.Label("カ メ ラ　", labelStyle);
@@ -139,37 +145,65 @@ namespace jp.illusive_isc
             List<string> cameraNames = new();
             foreach (var camera in Camera.allCameras)
                 cameraNames.Add(camera.name);
-            EasyScreenShot.cameraIndex = EditorGUILayout.Popup(
+
+            var tmpCameraIndex = EditorGUILayout.Popup(
                 EasyScreenShot.cameraIndex,
                 cameraNames.ToArray(),
                 GUILayout.Width(186)
             );
+            if (EasyScreenShot.cameraIndex != tmpCameraIndex)
+            {
+                EasyScreenShot.cameraIndex = tmpCameraIndex;
+                EasyScreenShot.GetImage();
+            }
 
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.BeginHorizontal();
             GUILayout.Label("投 　影", labelStyle);
             GUILayout.FlexibleSpace();
-            EasyScreenShot.projectionIndex = EditorGUILayout.Popup(
+            var tmpProjectionIndex = EditorGUILayout.Popup(
                 EasyScreenShot.projectionIndex,
                 projectionString,
                 GUILayout.Width(186)
             );
+            if (EasyScreenShot.projectionIndex != tmpProjectionIndex)
+            {
+                EasyScreenShot.projectionIndex = tmpProjectionIndex;
+                EasyScreenShot.GetImage();
+            }
             EditorGUILayout.EndHorizontal();
 
-            serializedObject.Update();
             EditorGUILayout.BeginHorizontal();
             if (EasyScreenShot.projectionIndex == 0)
             {
                 GUILayout.Label("拡 大 率", labelStyle);
                 GUILayout.FlexibleSpace();
-                EditorGUILayout.PropertyField(size, GUIContent.none, GUILayout.Width(186));
+                size.floatValue = EditorGUILayout.Slider(
+                    size.floatValue,
+                    0f,
+                    10f,
+                    GUILayout.Width(186)
+                );
             }
             else
             {
-                GUILayout.Label("F　o　V", labelStyle);
+                GUILayout.Label("F　o　V（同期モード", labelStyle);
+                EditorGUILayout.PropertyField(FoVtoggle, new GUIContent(""), GUILayout.Width(10));
+                GUILayout.Label("）", labelStyle);
                 GUILayout.FlexibleSpace();
-                EditorGUILayout.PropertyField(FoV, GUIContent.none, GUILayout.Width(186));
+                if (FoVtoggle.boolValue)
+                {
+                    GUI.enabled = false;
+                    FoV.floatValue = Camera.allCameras[EasyScreenShot.cameraIndex].fieldOfView;
+                }
+                FoV.floatValue = EditorGUILayout.Slider(
+                    FoV.floatValue,
+                    0f,
+                    180f,
+                    GUILayout.Width(186)
+                );
+                GUI.enabled = true;
             }
 
             EditorGUILayout.EndHorizontal();
@@ -177,22 +211,21 @@ namespace jp.illusive_isc
 
             GUILayout.Label("背 　景", labelStyle);
             GUILayout.FlexibleSpace();
-            if (EasyScreenShot.backgroundIndex != 1)
+
+            var tmpBackgroundIndex = EditorGUILayout.Popup(
+                EasyScreenShot.backgroundIndex,
+                backgroundMode,
+                GUILayout.Width(EasyScreenShot.backgroundIndex == 1 ? 82 : 186)
+            );
+            if (EasyScreenShot.backgroundIndex != tmpBackgroundIndex)
             {
-                EasyScreenShot.backgroundIndex = EditorGUILayout.Popup(
-                    EasyScreenShot.backgroundIndex,
-                    backgroundMode,
-                    GUILayout.Width(186)
-                );
+                EasyScreenShot.backgroundIndex = tmpBackgroundIndex;
+                EasyScreenShot.GetImage();
             }
-            else
+            if (EasyScreenShot.backgroundIndex == 1)
             {
-                EasyScreenShot.backgroundIndex = EditorGUILayout.Popup(
-                    EasyScreenShot.backgroundIndex,
-                    backgroundMode,
-                    GUILayout.Width(82)
-                );
                 EditorGUILayout.PropertyField(background, GUIContent.none, GUILayout.Width(101));
+                EasyScreenShot.GetImage();
             }
 
             serializedObject.ApplyModifiedProperties();
@@ -229,9 +262,9 @@ namespace jp.illusive_isc
                     aspectString,
                     GUILayout.Width(50)
                 );
-                var resolution = GetResolution(EasyScreenShot.aspectIndex != 0);
-                EasyScreenShot.width = resolution.width;
-                EasyScreenShot.height = resolution.height;
+                var (width, height) = GetResolution(EasyScreenShot.aspectIndex != 0);
+                EasyScreenShot.width = width;
+                EasyScreenShot.height = height;
             }
             else
             {
@@ -254,13 +287,10 @@ namespace jp.illusive_isc
                 );
                 GUILayout.Label("ブラーオプション", EditorStyles.boldLabel);
 
-                // bool型の選択ボックス（チェックボックス）
                 useLensBlur.boolValue = EditorGUILayout.Toggle(
                     "レンズブラーを使用",
                     useLensBlur.boolValue
                 );
-
-                // チェックボックスの状態に基づいて表示を変更
 
                 GUILayout.Label("レンズブラー", labelStyle);
                 GUILayout.FlexibleSpace();
@@ -304,9 +334,25 @@ namespace jp.illusive_isc
                 );
             }
             GUI.enabled = !EasyScreenShot.doImage;
+
+            EditorGUILayout.BeginHorizontal();
+
+            GUILayout.Label("リアルタイム変更", labelStyle, GUILayout.Width(85));
+            EditorGUILayout.PropertyField(ScreenshotMode, new GUIContent(""), GUILayout.Width(15));
+            serializedObject.ApplyModifiedProperties();
+            if (ScreenshotMode.boolValue)
+            {
+                if (EditorApplication.timeSinceStartup - lastTime >= 0.5)
+                {
+                    EasyScreenShot.GetImage();
+                    lastTime = EditorApplication.timeSinceStartup;
+                }
+                GUI.enabled = false;
+            }
             if (GUILayout.Button("Screenshot"))
                 EasyScreenShot.GetImage();
             GUI.enabled = true;
+            EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Saveしてフォルダ表示"))
